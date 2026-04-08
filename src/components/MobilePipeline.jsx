@@ -4,7 +4,7 @@ import { useExecutePipeline } from '../hooks/useExecutePipeline';
 import { MODELS } from '../data/models';
 import {
   Play, Loader2, ChevronDown, ChevronUp, Trash2,
-  Image, Film, Type, Mic, Music, FileText, Pencil, Zap, Upload,
+  Image, Film, Type, Mic, Music, FileText, Pencil, Zap, Upload, Link2,
 } from 'lucide-react';
 
 const RESOLUTIONS = ['512px', '1K', '2K', '4K'];
@@ -25,8 +25,140 @@ const NODE_ICONS = {
   lipSyncNode: { icon: Mic, color: '#f43f5e', label: 'LipSync' },
 };
 
-function PipelineCard({ node, isExpanded, onToggle }) {
-  const { nodeSettings, nodeStatuses, nodeOutputs, nodeErrors,
+// ── Helper: get all nodes that can be a source for this node ──
+function getConnectableSources(nodes, nodeOutputs, targetId) {
+  return nodes
+    .filter(n => n.id !== targetId)
+    .map(n => {
+      const meta = NODE_ICONS[n.type] || NODE_ICONS.promptNode;
+      const output = nodeOutputs[n.id];
+      const hasImage = output?.image || (n.type === 'imageInputNode' && n.data?.image);
+      const hasPrompt = n.type === 'promptNode';
+      const hasText = output?.text || n.type === 'rewriteNode';
+      const hasVideo = output?.video;
+      const hasAudio = output?.audio;
+
+      // Determine what this node outputs
+      const outputTypes = [];
+      if (hasPrompt) outputTypes.push('prompt');
+      if (hasImage) outputTypes.push('image');
+      if (hasText && !hasPrompt) outputTypes.push('text');
+      if (hasVideo) outputTypes.push('video');
+      if (hasAudio) outputTypes.push('audio');
+
+      // Show a preview tag
+      let tag = n.data?.label || meta.label;
+      if (output?.image || (n.type === 'imageInputNode' && n.data?.image)) tag += ' 🖼';
+      if (hasPrompt && n.data?.text) tag += ` "${n.data.text.slice(0, 20)}…"`;
+
+      return { id: n.id, label: tag, meta, outputTypes, node: n, hasImage };
+    });
+}
+
+function InputWiring({ node, nodes, edges, nodeOutputs }) {
+  const { onConnect } = useFlowStore();
+
+  // Find edges targeting this node
+  const incomingEdges = edges.filter(e => e.target === node.id);
+  const connectedSourceIds = new Set(incomingEdges.map(e => e.source));
+
+  const sources = getConnectableSources(nodes, nodeOutputs, node.id);
+
+  // Determine which handle types this node accepts
+  const acceptsPrompt = ['geminiImageNode', 'geminiVideoNode', 'geminiTextNode', 'geminiSpeechNode', 'geminiMusicNode', 'rewriteNode'].includes(node.type);
+  const acceptsImage = ['geminiImageNode', 'geminiVideoNode', 'outputNode'].includes(node.type);
+  const acceptsText = ['geminiSpeechNode', 'rewriteNode', 'textOutputNode'].includes(node.type);
+  const acceptsVideo = ['outputNode', 'lipSyncNode'].includes(node.type);
+  const acceptsAudio = ['outputNode'].includes(node.type);
+
+  const filterSources = sources.filter(s => {
+    // Show sources that produce something this node accepts
+    if (acceptsPrompt && s.outputTypes.includes('prompt')) return true;
+    if (acceptsImage && (s.outputTypes.includes('image') || s.hasImage)) return true;
+    if (acceptsText && s.outputTypes.includes('text')) return true;
+    if (acceptsVideo && s.outputTypes.includes('video')) return true;
+    if (acceptsAudio && s.outputTypes.includes('audio')) return true;
+    // Output node accepts everything
+    if (node.type === 'outputNode') return true;
+    return false;
+  });
+
+  const toggleConnection = (sourceId) => {
+    const store = useFlowStore.getState();
+    if (connectedSourceIds.has(sourceId)) {
+      // Disconnect: remove all edges from this source to this target
+      const toRemove = edges.filter(e => e.source === sourceId && e.target === node.id);
+      if (toRemove.length > 0) {
+        store.onEdgesChange(toRemove.map(e => ({ type: 'remove', id: e.id })));
+      }
+    } else {
+      // Connect: determine appropriate handles
+      const sourceNode = nodes.find(n => n.id === sourceId);
+      if (!sourceNode) return;
+      
+      let sourceHandle = 'prompt';
+      if (sourceNode.type === 'imageInputNode' || sourceNode.type === 'geminiImageNode') sourceHandle = 'image';
+      if (sourceNode.type === 'geminiVideoNode') sourceHandle = 'video';
+      if (sourceNode.type === 'geminiTextNode' || sourceNode.type === 'rewriteNode') sourceHandle = 'text';
+      if (sourceNode.type === 'geminiSpeechNode' || sourceNode.type === 'geminiMusicNode') sourceHandle = 'audio';
+      if (sourceNode.type === 'outputNode') sourceHandle = 'image';
+
+      let targetHandle = 'prompt';
+      if (sourceHandle === 'image') targetHandle = 'image';
+      if (sourceHandle === 'video') targetHandle = 'video';
+      if (sourceHandle === 'text') targetHandle = 'text';
+      if (sourceHandle === 'audio') targetHandle = 'audio';
+      if (sourceHandle === 'prompt') targetHandle = 'prompt';
+
+      store.onConnect({
+        source: sourceId,
+        sourceHandle,
+        target: node.id,
+        targetHandle,
+      });
+    }
+  };
+
+  if (filterSources.length === 0) return null;
+
+  return (
+    <div className="mp-wiring">
+      <div className="mp-wiring-title">
+        <Link2 size={13} /> Inputs — Tap to connect
+      </div>
+      <div className="mp-wiring-list">
+        {filterSources.map(source => {
+          const isConnected = connectedSourceIds.has(source.id);
+          const SourceIcon = source.meta.icon;
+          return (
+            <button
+              key={source.id}
+              className={`mp-wire-item ${isConnected ? 'mp-wire-item--active' : ''}`}
+              onClick={() => toggleConnection(source.id)}
+            >
+              <div className="mp-wire-icon" style={{ color: source.meta.color }}>
+                <SourceIcon size={14} />
+              </div>
+              <span className="mp-wire-label">{source.label}</span>
+              <span className={`mp-wire-toggle ${isConnected ? 'mp-wire-toggle--on' : ''}`}>
+                {isConnected ? '✓' : '+'}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {connectedSourceIds.size > 0 && (
+        <div className="mp-wiring-count">
+          {connectedSourceIds.size} input{connectedSourceIds.size > 1 ? 's' : ''} connected
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function PipelineCard({ node, isExpanded, onToggle, allNodes }) {
+  const { nodeSettings, nodeStatuses, nodeOutputs, nodeErrors, edges,
     updateNodeSettings, deleteSelected, setSelectedItems } = useFlowStore();
   const { executeSingle } = useExecutePipeline();
 
@@ -43,6 +175,12 @@ function PipelineCard({ node, isExpanded, onToggle }) {
   const isSpeechNode = node.type === 'geminiSpeechNode';
   const isMusicNode = node.type === 'geminiMusicNode';
   const isPromptNode = node.type === 'promptNode';
+
+  // Does this node accept inputs?
+  const canReceiveInputs = !isPromptNode && node.type !== 'imageInputNode';
+
+  // Count connected inputs for badge
+  const connectedCount = edges.filter(e => e.target === node.id).length;
 
   const modelOptions = isImageNode ? MODELS.image
     : isVideoNode ? MODELS.video
@@ -73,7 +211,10 @@ function PipelineCard({ node, isExpanded, onToggle }) {
           <Icon size={16} />
         </div>
         <div className="mp-card-info">
-          <div className="mp-card-title">{node.data?.label || meta.label}</div>
+          <div className="mp-card-title">
+            {node.data?.label || meta.label}
+            {connectedCount > 0 && <span className="mp-card-badge">{connectedCount} input{connectedCount > 1 ? 's' : ''}</span>}
+          </div>
           <div className="mp-card-subtitle">
             {isPromptNode && (node.data?.text ? node.data.text.slice(0, 40) + '…' : 'Empty prompt')}
             {isImageNode && `${settings.aspectRatio || '16:9'} · ${settings.resolution || '1K'}`}
@@ -127,6 +268,17 @@ function PipelineCard({ node, isExpanded, onToggle }) {
       {/* Expanded Settings */}
       {isExpanded && (
         <div className="mp-card-settings">
+
+          {/* ── INPUT WIRING — tap to connect any node ── */}
+          {canReceiveInputs && (
+            <InputWiring
+              node={node}
+              nodes={allNodes}
+              edges={edges}
+              nodeOutputs={nodeOutputs}
+            />
+          )}
+
           {/* Image Input — upload */}
           {node.type === 'imageInputNode' && (
             <div className="mp-field">
@@ -289,7 +441,12 @@ function PipelineCard({ node, isExpanded, onToggle }) {
 }
 
 export default function MobilePipeline({ onAddStep }) {
-  const { nodes, mobileExpandedNode, setMobileExpandedNode } = useFlowStore();
+  const { nodes, edges, mobileExpandedNode, setMobileExpandedNode } = useFlowStore();
+
+  // Build connection map for visual connectors
+  const getNodeConnections = (nodeId) => {
+    return edges.filter(e => e.target === nodeId).map(e => e.source);
+  };
 
   return (
     <div className="mp-container">
@@ -304,21 +461,45 @@ export default function MobilePipeline({ onAddStep }) {
         </div>
       ) : (
         <div className="mp-list">
-          {nodes.map((node, i) => (
-            <React.Fragment key={node.id}>
-              <PipelineCard
-                node={node}
-                isExpanded={mobileExpandedNode === node.id}
-                onToggle={() => setMobileExpandedNode(node.id)}
-              />
-              {i < nodes.length - 1 && (
-                <div className="mp-connector">
-                  <div className="mp-connector-line" />
-                  <div className="mp-connector-arrow">↓</div>
-                </div>
-              )}
-            </React.Fragment>
-          ))}
+          {nodes.map((node, i) => {
+            const connections = getNodeConnections(node.id);
+            const hasExplicitConnections = connections.length > 0;
+            // Find source node labels for the connector
+            const sourceLabels = connections.map(srcId => {
+              const srcNode = nodes.find(n => n.id === srcId);
+              const srcMeta = NODE_ICONS[srcNode?.type] || NODE_ICONS.promptNode;
+              return srcNode?.data?.label || srcMeta.label;
+            });
+
+            return (
+              <React.Fragment key={node.id}>
+                {/* Show connection lines from wired sources */}
+                {hasExplicitConnections && (
+                  <div className="mp-connector mp-connector--wired">
+                    <div className="mp-connector-line" />
+                    <div className="mp-connector-sources">
+                      {sourceLabels.map((label, j) => (
+                        <span key={j} className="mp-connector-tag">← {label}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Show default arrow if no explicit connections and not first */}
+                {!hasExplicitConnections && i > 0 && (
+                  <div className="mp-connector">
+                    <div className="mp-connector-line mp-connector-line--dim" />
+                    <div className="mp-connector-arrow" style={{ opacity: 0.3 }}>↓</div>
+                  </div>
+                )}
+                <PipelineCard
+                  node={node}
+                  isExpanded={mobileExpandedNode === node.id}
+                  onToggle={() => setMobileExpandedNode(node.id)}
+                  allNodes={nodes}
+                />
+              </React.Fragment>
+            );
+          })}
         </div>
       )}
 
