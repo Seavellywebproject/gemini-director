@@ -7,9 +7,10 @@ import { GoogleGenAI } from '@google/genai';
 
 // ── API Key Management ──────────────────────────────────────────────
 const STORAGE_KEY = 'gemini-api-key';
+const ENV_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 export function getApiKey() {
-  return localStorage.getItem(STORAGE_KEY) || '';
+  return localStorage.getItem(STORAGE_KEY) || ENV_KEY || '';
 }
 
 export function setApiKey(key) {
