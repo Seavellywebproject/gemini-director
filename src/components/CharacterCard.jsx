@@ -50,7 +50,7 @@ export default function CharacterCard({ character }) {
       const prompt = buildCharacterPortraitPrompt(character);
       const data = await generateImage({
         prompt,
-        model: projectSettings.imageModel || 'imagen-3.0-generate-002',
+        model: projectSettings.imageModel || 'imagen-4.0-generate-001',
         aspectRatio: '1:1',
         numberOfImages: 1,
       });

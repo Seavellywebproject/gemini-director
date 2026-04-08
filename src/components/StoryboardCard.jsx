@@ -41,13 +41,12 @@ export default function StoryboardCard({ scene }) {
 
   // Image models — Nano Banana = Imagen branding; Gemini listed separately
   const IMAGE_MODELS = [
-    { id: 'nano-banana-pro-preview',        label: '🍌 Nano Banana Pro',       desc: 'Studio-quality — top of range' },
-    { id: 'gemini-3.1-flash-image-preview', label: '🍌 Nano Banana 2',         desc: 'Latest Nano Banana — fast & sharp' },
-    { id: 'gemini-3-pro-image-preview',     label: '🍌 Nano Banana Pro Gen3',  desc: 'Gemini 3 Pro image quality' },
-    { id: 'gemini-2.5-flash-image',         label: '🍌 Nano Banana Flash',     desc: 'Fast gen + face reference support' },
-    { id: 'imagen-4.0-ultra-generate-001',  label: '🍌 Nano Banana Ultra',     desc: 'Highest fidelity photorealism' },
-    { id: 'imagen-4.0-generate-001',        label: '🍌 Nano Banana Standard',  desc: 'Recommended — great quality' },
-    { id: 'imagen-4.0-fast-generate-001',   label: '🍌 Nano Banana Fast',      desc: 'Quickest — good for drafts' },
+    { id: 'gemini-3.1-flash-image-preview', label: '🍌 Nano Banana 2',         desc: 'Latest — fast & sharp' },
+    { id: 'gemini-3-pro-image-preview',     label: '🍌 Nano Banana Pro',       desc: 'Studio-quality 4K visuals' },
+    { id: 'imagen-4.0-generate-001',        label: '⭐ Imagen 4',              desc: 'Recommended — great quality' },
+    { id: 'imagen-4.0-ultra-generate-001',  label: '✦ Imagen 4 Ultra',         desc: 'Highest fidelity' },
+    { id: 'imagen-4.0-fast-generate-001',   label: '⚡ Imagen 4 Fast',          desc: 'Quickest — good for drafts' },
+    { id: 'gemini-2.5-flash',              label: 'Gemini 2.5 Flash',          desc: 'Stable native + face ref' },
   ];
 
   const handlePickModelAndGenerate = (modelId) => {

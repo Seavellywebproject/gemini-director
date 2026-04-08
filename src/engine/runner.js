@@ -30,7 +30,7 @@ async function executeNode(node, inputs, settings) {
       const result = await generateImage({
         prompt: inputs.prompt || inputs.text || '',
         referenceImage: inputs.image || null,
-        model: settings.model || data?.model?.id || 'imagen-3.0-generate-002',
+        model: settings.model || data?.model?.id || 'imagen-4.0-generate-001',
         numberOfImages: settings.numberOfImages || 1,
         aspectRatio: settings.aspectRatio || '1:1',
         negativePrompt: settings.negativePrompt || '',

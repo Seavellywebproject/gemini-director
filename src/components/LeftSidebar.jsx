@@ -99,8 +99,8 @@ export default function LeftSidebar() {
                   className="rp-input-seed"
                   placeholder="GEMINI_API_KEY"
                   style={{ width: '100%' }}
-                  onBlur={(e) => localStorage.setItem('GEMINI_API_KEY', e.target.value)}
-                  defaultValue={localStorage.getItem('GEMINI_API_KEY') || ''}
+                  onBlur={(e) => { import('../services/geminiClient').then(m => m.setApiKey(e.target.value)); }}
+                  defaultValue={''}
                 />
               </div>
             </div>

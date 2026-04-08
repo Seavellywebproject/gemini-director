@@ -46,7 +46,7 @@ export async function generateImage({
   prompt,
   referenceImage,
   referenceImages,
-  model = 'imagen-3.0-generate-002',
+  model = 'imagen-4.0-generate-001',
   numberOfImages = 1,
   aspectRatio = '1:1',
   negativePrompt,
@@ -132,7 +132,7 @@ export async function generateImage({
 export async function generateVideo({
   prompt,
   startImage,
-  model = 'veo-2.0-generate-001',
+  model = 'veo-3.1-generate-preview',
   aspectRatio = '16:9',
   durationSeconds = 5,
 }) {

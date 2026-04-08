@@ -95,7 +95,7 @@ export const useFlowStore = create((set, get) => ({
         'imagen-4.0-ultra-generate-preview-05-20': 'imagen-4.0-ultra-generate-001',
         'gemini-2.5-flash-preview-05-20': 'gemini-2.5-flash',
         'gemini-2.5-pro-preview-05-06': 'gemini-2.5-pro',
-        'gemini-2.5-flash-preview-image-generation': 'gemini-2.5-flash-image',
+        'gemini-2.5-flash-preview-image-generation': 'gemini-3.1-flash-image-preview',
         'gemini-2.5-flash-live-preview': 'gemini-2.5-flash-native-audio-latest',
         'veo-3.0-generate-preview': 'veo-3.0-generate-001',
         'deep-research-pro-preview': 'deep-research-pro-preview-12-2025',
@@ -351,7 +351,7 @@ export const useFlowStore = create((set, get) => ({
       label: `Scene ${scene.order || scene.id} — ${scene.location || 'Generate'}`,
       model: null,
     }));
-    newSettings[generatorId] = { ...settingsBase, model: 'gemini-2.5-flash-image' };
+    newSettings[generatorId] = { ...settingsBase, model: 'gemini-3.1-flash-image-preview' };
     newStatuses[generatorId] = 'idle';
 
     // 4. Scene image preview node (far right) — shows the EXISTING generated image immediately
