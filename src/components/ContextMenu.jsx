@@ -63,6 +63,7 @@ export default function ContextMenu({ x, y, flowX, flowY, onClose }) {
           className="context-item context-item--submenu"
           onMouseEnter={() => setActiveSubmenu({ id: item.id, children: item.children })}
           onMouseLeave={() => setActiveSubmenu(null)}
+          onClick={(e) => { e.stopPropagation(); setActiveSubmenu(prev => prev?.id === item.id ? null : { id: item.id, children: item.children }); }}
         >
           <span>{item.label}</span>
           <ChevronRight size={12} />

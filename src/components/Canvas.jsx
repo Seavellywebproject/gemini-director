@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactFlow, {
   Background,
   MiniMap,
@@ -20,6 +20,7 @@ import GeminiSpeechNode, { GeminiMusicNode } from '../nodes/GeminiSpeechNode';
 import OutputNode from '../nodes/OutputNode';
 import RewriteNode from '../nodes/RewriteNode';
 import LipSyncNode from '../nodes/LipSyncNode';
+import { Plus } from 'lucide-react';
 
 const nodeTypes = {
   promptNode: PromptNode,
@@ -48,6 +49,8 @@ export default function Canvas() {
 
   const { project } = useReactFlow();
   const canvasRef = useRef(null);
+  const longPressTimer = useRef(null);
+  const [isMobile] = useState(() => window.matchMedia('(max-width: 768px)').matches);
 
   // Pan mode when hand tool active
   const panOnDrag = activeTool === 'hand';
@@ -55,7 +58,6 @@ export default function Canvas() {
   // ── Keyboard shortcuts ─────────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
-      // Ignore when typing in an input
       const tag = document.activeElement?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
@@ -90,7 +92,7 @@ export default function Canvas() {
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };
   }, [activeTool, setActiveTool]);
 
-  // ── Right-click ────────────────────────────────────────────────
+  // ── Right-click (desktop) ──────────────────────────────────────
   const onContextMenu = useCallback((e) => {
     e.preventDefault();
     const bounds = canvasRef.current?.getBoundingClientRect();
@@ -98,16 +100,42 @@ export default function Canvas() {
     openContextMenu(e.clientX, e.clientY, flowPos.x, flowPos.y);
   }, [project, openContextMenu]);
 
+  // ── Long press (mobile) ────────────────────────────────────────
+  const onTouchStart = useCallback((e) => {
+    if (!isMobile) return;
+    const touch = e.touches[0];
+    longPressTimer.current = setTimeout(() => {
+      const bounds = canvasRef.current?.getBoundingClientRect();
+      const flowPos = project({ x: touch.clientX - (bounds?.left || 0), y: touch.clientY - (bounds?.top || 0) });
+      openContextMenu(touch.clientX, touch.clientY, flowPos.x, flowPos.y);
+    }, 600);
+  }, [isMobile, project, openContextMenu]);
+
+  const onTouchEnd = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
+
+  const onTouchMove = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
+
+  // ── Mobile FAB: opens context menu at center ───────────────────
+  const handleMobileFab = useCallback(() => {
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const bounds = canvasRef.current?.getBoundingClientRect();
+    const flowPos = project({ x: cx - (bounds?.left || 0), y: cy - (bounds?.top || 0) });
+    openContextMenu(cx, cy, flowPos.x, flowPos.y);
+  }, [project, openContextMenu]);
+
   const onPaneClick = useCallback(() => {
     closeContextMenu();
   }, [closeContextMenu]);
 
-  // ── Selection change ───────────────────────────────────────────
   const onSelectionChange = useCallback(({ nodes: selectedNodes, edges: selectedEdges }) => {
     setSelectedItems(selectedNodes.map((n) => n.id), selectedEdges.map((e) => e.id));
   }, [setSelectedItems]);
 
-  // ── After connect, push history ────────────────────────────────
   const handleConnect = useCallback((params) => {
     onConnect(params);
     setTimeout(pushHistory, 0);
@@ -118,6 +146,9 @@ export default function Canvas() {
       ref={canvasRef}
       className="canvas-wrapper"
       style={{ cursor: activeTool === 'hand' ? 'grab' : 'default' }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      onTouchMove={onTouchMove}
     >
       <ReactFlow
         nodes={nodes}
@@ -135,7 +166,7 @@ export default function Canvas() {
         zoomOnScroll={true}
         zoomOnPinch={true}
         fitView
-        deleteKeyCode={null}  // we handle delete manually
+        deleteKeyCode={null}
         defaultEdgeOptions={{
           type: 'smoothstep',
           animated: true,
@@ -174,8 +205,15 @@ export default function Canvas() {
         />
       </ReactFlow>
 
-      {/* Bottom toolbar lives inside Canvas so it can access ReactFlow context */}
+      {/* Bottom toolbar */}
       <BottomToolbar />
+
+      {/* Mobile FAB — Add Node button */}
+      {isMobile && !contextMenu && (
+        <button className="mobile-fab" onClick={handleMobileFab}>
+          <Plus size={24} />
+        </button>
+      )}
 
       {/* Context Menu */}
       {contextMenu && (

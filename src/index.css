@@ -816,6 +816,11 @@ video.node-output-img { max-height: 160px; }
     touch-action: none;
   }
 
+  /* ── Hide minimap on mobile — too small to be useful ── */
+  .react-flow__minimap {
+    display: none;
+  }
+
   /* ── Flyout panels (sidebar sub-panels): fullscreen on mobile ── */
   .sidebar-flyout {
     position: fixed;
@@ -823,6 +828,59 @@ video.node-output-img { max-height: 160px; }
     width: 85vw;
     max-width: 320px;
     z-index: 210;
+  }
+
+  /* ── FAB (Floating Add Button) ── */
+  .mobile-fab {
+    position: absolute;
+    bottom: max(80px, calc(env(safe-area-inset-bottom) + 72px));
+    right: 16px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5);
+    z-index: 100;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .mobile-fab:active {
+    transform: scale(0.92);
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+  }
+
+  /* ── Context menu on mobile: full-width bottom sheet ── */
+  .context-menu {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 8px !important;
+    top: auto !important;
+    max-height: 60vh;
+    border-radius: 16px;
+    width: auto !important;
+  }
+  .context-body {
+    max-height: 50vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .context-item {
+    min-height: 44px;
+    font-size: 14px;
+  }
+  .context-submenu {
+    position: static !important;
+    border: none;
+    box-shadow: none;
+    background: #1a1a1a;
+    border-radius: 8px;
+    margin: 4px 0 4px 12px;
   }
 }
 .node-text-content {
