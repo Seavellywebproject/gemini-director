@@ -18,8 +18,10 @@ const TABS = [
 ];
 
 const MODELS = [
-  { id: 'gemini-2.5-pro',               label: '✦ Gemini 2.5 Pro (Best)' },
-  { id: 'gemini-2.5-flash',             label: '⚡ Gemini 2.5 Flash (Fast)' },
+  { id: 'gemini-3.1-pro-preview',        label: '✦ Gemini 3.1 Pro (Best)' },
+  { id: 'gemini-3-flash-preview',         label: '⚡ Gemini 3 Flash (Fast)' },
+  { id: 'gemini-2.5-pro',                label: '✦ Gemini 2.5 Pro (Stable)' },
+  { id: 'gemini-2.5-flash',              label: '⚡ Gemini 2.5 Flash (Stable)' },
 ];
 
 const GENRES = ['Noir', 'Sci-Fi', 'Horror', 'Drama', 'Thriller', 'Western', 'Action', 'Comedy', 'Romance', 'Documentary'];
@@ -105,6 +107,8 @@ export default function StoryboardPanel() {
         return;
       }
 
+      let accumulated = '';
+
       const result = await storyboardChat({
         message: msg,
         history: buildApiHistory(),
@@ -118,8 +122,6 @@ export default function StoryboardPanel() {
           updateLastAssistantMessage({ content: accumulated, streaming: true });
         },
       });
-
-      let accumulated = '';
 
       if (result.type === 'storyboard' && result.storyboard) {
         setStoryboard(result.storyboard);
@@ -414,11 +416,13 @@ export default function StoryboardPanel() {
           </div>
           <div className="settings-field">
             <label>Image Model</label>
-            <select value={projectSettings.imageModel || 'imagen-3.0-generate-002'} onChange={e => updateProjectSettings({ imageModel: e.target.value })}>
-              <option value="imagen-3.0-generate-002">Imagen 3 — Recommended</option>
-              <option value="imagen-3.0-fast-generate-001">Imagen 3 Fast — Quickest</option>
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash — Native</option>
-              <option value="gemini-2.5-pro">Gemini 2.5 Pro — Best Quality</option>
+            <select value={projectSettings.imageModel || 'imagen-4.0-generate-001'} onChange={e => updateProjectSettings({ imageModel: e.target.value })}>
+              <option value="imagen-4.0-generate-001">Imagen 4 — Recommended</option>
+              <option value="imagen-4.0-ultra-generate-001">Imagen 4 Ultra — Best Quality</option>
+              <option value="imagen-4.0-fast-generate-001">Imagen 4 Fast — Quickest</option>
+              <option value="gemini-3.1-flash-image-preview">🍌 Nano Banana 2 — Fast Native</option>
+              <option value="gemini-3-pro-image-preview">🍌 Nano Banana Pro — Best Native</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash — Stable Native</option>
             </select>
           </div>
 
