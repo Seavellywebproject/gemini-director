@@ -27,7 +27,7 @@ const MODELS = [
 const GENRES = ['Noir', 'Sci-Fi', 'Horror', 'Drama', 'Thriller', 'Western', 'Action', 'Comedy', 'Romance', 'Documentary'];
 const ASPECT_RATIOS = ['2.39:1', '1.85:1', '16:9', '4:3', '1:1'];
 
-export default function StoryboardPanel() {
+export default function StoryboardPanel({ mobileMode }) {
   const {
     storyboardOpen, toggleStoryboard,
     chatHistory, addChatMessage, updateLastAssistantMessage, clearChat,
@@ -48,14 +48,20 @@ export default function StoryboardPanel() {
 
   // T10 — restore from localStorage on panel open
   useEffect(() => {
-    if (storyboardOpen) loadFromStorage();
-  }, [storyboardOpen]);
+    if (storyboardOpen || mobileMode) loadFromStorage();
+  }, [storyboardOpen, mobileMode]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, streamingText]);
 
-  if (!storyboardOpen) return null;
+  // In mobile mode, force the tab and always render
+  useEffect(() => {
+    if (mobileMode === 'chat') setActiveTab('chat');
+    if (mobileMode === 'board') setActiveTab('storyboard');
+  }, [mobileMode]);
+
+  if (!mobileMode && !storyboardOpen) return null;
 
   // Generate All Images sequentially with progress
   const handleGenerateAllImages = async () => {
@@ -216,33 +222,46 @@ export default function StoryboardPanel() {
 
 
   return (
-    <div className="director-panel">
-      {/* Panel header */}
-      <div className="director-panel-header">
-        <div className="director-panel-title">
-          <Clapperboard size={16} />
-          <span>Director AI</span>
+    <div className={`director-panel ${mobileMode ? 'director-panel--mobile' : ''}`}>
+      {/* Panel header — desktop only */}
+      {!mobileMode && (
+        <div className="director-panel-header">
+          <div className="director-panel-title">
+            <Clapperboard size={16} />
+            <span>Director AI</span>
+          </div>
+          <div className="director-panel-controls">
+            <select className="director-model-select" value={model} onChange={e => setModel(e.target.value)}>
+              {MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+            </select>
+            <button className="director-close-btn" onClick={toggleStoryboard}><X size={16} /></button>
+          </div>
         </div>
-        <div className="director-panel-controls">
-          <select className="director-model-select" value={model} onChange={e => setModel(e.target.value)}>
+      )}
+
+      {/* Mobile: model picker inline */}
+      {mobileMode === 'chat' && (
+        <div className="mobile-model-picker">
+          <select value={model} onChange={e => setModel(e.target.value)}>
             {MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
           </select>
-          <button className="director-close-btn" onClick={toggleStoryboard}><X size={16} /></button>
         </div>
-      </div>
+      )}
 
-      {/* Tab bar */}
-      <div className="director-tabs">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            className={`director-tab ${activeTab === id ? 'director-tab--active' : ''}`}
-            onClick={() => setActiveTab(id)}
-          >
-            <Icon size={13} /> {label}
-          </button>
-        ))}
-      </div>
+      {/* Tab bar — desktop only */}
+      {!mobileMode && (
+        <div className="director-tabs">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              className={`director-tab ${activeTab === id ? 'director-tab--active' : ''}`}
+              onClick={() => setActiveTab(id)}
+            >
+              <Icon size={13} /> {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── CHAT TAB ─────────────────────────────────── */}
       {activeTab === 'chat' && (

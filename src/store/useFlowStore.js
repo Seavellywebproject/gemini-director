@@ -41,6 +41,12 @@ export const useFlowStore = create((set, get) => ({
   setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
   setMobilePanelOpen: (open) => set({ mobilePanelOpen: open }),
 
+  // Mobile tab navigation
+  mobileActiveTab: 'pipeline', // 'pipeline' | 'chat' | 'board' | 'more'
+  setMobileActiveTab: (tab) => set({ mobileActiveTab: tab }),
+  mobileExpandedNode: null, // nodeId or null
+  setMobileExpandedNode: (id) => set((s) => ({ mobileExpandedNode: s.mobileExpandedNode === id ? null : id })),
+
   // ── React Flow State ──────────────────────────────
   nodes: [],
   edges: [],
