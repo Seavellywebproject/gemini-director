@@ -292,6 +292,23 @@
   margin-top: 4px;
 }
 
+.mp-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  border: 2px dashed #333;
+  border-radius: 10px;
+  background: #0a0a0a;
+  color: #22c55e;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.mp-upload-btn:active { border-color: #22c55e; }
+
 /* ── Connector between cards ── */
 .mp-connector {
   display: flex;

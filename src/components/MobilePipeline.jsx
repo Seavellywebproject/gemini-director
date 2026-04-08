@@ -127,6 +127,42 @@ function PipelineCard({ node, isExpanded, onToggle }) {
       {/* Expanded Settings */}
       {isExpanded && (
         <div className="mp-card-settings">
+          {/* Image Input — upload */}
+          {node.type === 'imageInputNode' && (
+            <div className="mp-field">
+              <label>Upload Image</label>
+              {node.data?.image && (
+                <div className="mp-card-preview" style={{ marginBottom: 8 }}>
+                  <img src={node.data.image} alt="uploaded" />
+                </div>
+              )}
+              <button
+                className="mp-upload-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = async (ev) => {
+                    const file = ev.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const dataUrl = reader.result;
+                      useFlowStore.getState().updateNodeData(node.id, { image: dataUrl, filename: file.name });
+                      useFlowStore.getState().setNodeOutput(node.id, { image: dataUrl });
+                    };
+                    reader.readAsDataURL(file);
+                  };
+                  input.click();
+                }}
+              >
+                <Upload size={16} />
+                {node.data?.image ? 'Change Image' : 'Choose Image'}
+              </button>
+            </div>
+          )}
+
           {/* Prompt text */}
           {isPromptNode && (
             <div className="mp-field">
