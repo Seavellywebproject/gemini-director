@@ -706,18 +706,28 @@ video.node-output-img { max-height: 160px; }
   .mobile-toggle-btn { display: flex; }
   .hide-mobile { display: none !important; }
 
-  /* App Shell & TopBar overrides */
-  .top-bar { padding: 0 10px; }
-  .top-divider { margin: 0 6px; }
-  .top-title-input { width: 80px; }
+  /* ── TopBar: compact, no overflow ── */
+  .top-bar {
+    padding: 0 8px;
+    height: 48px;
+    gap: 4px;
+  }
+  .top-bar-left { gap: 4px; min-width: 0; }
+  .top-bar-right { gap: 4px; }
+  .top-divider { display: none; }
+  .top-title-input { width: 60px; font-size: 12px; }
+  .top-logo-text { display: none; }
+  .credits-badge { display: none; }
+  .run-pipeline-btn { font-size: 11px; padding: 6px 12px; }
 
-  /* Sidebars become sliding overlays */
+  /* ── Left Sidebar: hidden by default, slide from left ── */
   .left-sidebar {
-    position: absolute;
+    position: fixed;
     top: 0; bottom: 0; left: 0;
-    z-index: 50;
+    width: 52px;
+    z-index: 200;
     transform: translateX(-100%);
-    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    box-shadow: 10px 0 40px rgba(0,0,0,0.7);
     background: #09090b;
     border-right: 1px solid #27272a;
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -726,13 +736,15 @@ video.node-output-img { max-height: 160px; }
     transform: translateX(0);
   }
 
+  /* ── Right Panel: hidden by default, slide from right ── */
   .right-panel {
-    position: absolute;
+    position: fixed;
     top: 0; bottom: 0; right: 0;
-    width: 300px;
-    z-index: 50;
+    width: 92vw;
+    max-width: 360px;
+    z-index: 200;
     transform: translateX(100%);
-    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    box-shadow: -10px 0 40px rgba(0,0,0,0.7);
     background: #09090b;
     border-left: 1px solid #27272a;
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -741,23 +753,73 @@ video.node-output-img { max-height: 160px; }
     transform: translateX(0);
   }
 
+  /* ── Overlay for open panels ── */
+  .mobile-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+  }
   .app-body.mobile-sidebar-open .mobile-overlay,
   .app-body.mobile-panel-open .mobile-overlay {
     display: block;
   }
 
-  /* Make chat more usable on small screen */
+  /* ── Canvas: full width ── */
+  .app-body {
+    position: relative;
+  }
+  .canvas-container,
+  .react-flow {
+    width: 100% !important;
+  }
+
+  /* ── Bottom Toolbar: simplified, fewer buttons ── */
+  .bottom-toolbar {
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 6px;
+    gap: 1px;
+    border-radius: 12px;
+    max-width: 90vw;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .toolbar-btn {
+    width: 36px; height: 36px;
+    min-width: 36px;
+  }
+  .toolbar-divider { margin: 0 2px; }
+  .zoom-display { min-width: 30px; font-size: 10px; }
+
+  /* ── Chat input area: safe area padding ── */
   .chat-input-area {
     padding: 10px;
     padding-bottom: max(10px, env(safe-area-inset-bottom));
   }
-  
-  /* Canvas improvements for touch */
+
+  /* ── Storyboard panel tabs: bigger touch targets ── */
+  .director-tabs button {
+    min-height: 40px;
+    font-size: 12px;
+  }
+
+  /* ── Canvas touch improvements ── */
   .react-flow__pane {
-    cursor: grab !important;
+    cursor: default !important;
+    touch-action: pan-x pan-y;
   }
   .react-flow__node {
-    touch-action: none; /* prevent zoom when dragging nodes */
+    touch-action: none;
+  }
+
+  /* ── Flyout panels (sidebar sub-panels): fullscreen on mobile ── */
+  .sidebar-flyout {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 85vw;
+    max-width: 320px;
+    z-index: 210;
   }
 }
 .node-text-content {
