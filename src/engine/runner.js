@@ -160,7 +160,23 @@ export async function runPipeline({
 
     const settings = nodeSettings[nodeId] || {};
     const inputMap = buildInputMap([nodeId], edges, outputs, nodes);
-    const inputs = inputMap[nodeId] || {};
+    let inputs = inputMap[nodeId] || {};
+
+    // ── Mobile fallback: if no edges provide inputs, use outputs from all prior nodes ──
+    if (Object.keys(inputs).length === 0 && nodes.length > 1) {
+      const nodeIndex = nodes.findIndex((n) => n.id === nodeId);
+      if (nodeIndex > 0) {
+        for (let i = 0; i < nodeIndex; i++) {
+          const prevNode = nodes[i];
+          let prevOutput = outputs[prevNode.id];
+          if (!prevOutput) {
+            if (prevNode.type === 'promptNode') prevOutput = { prompt: prevNode.data?.text || '' };
+            if (prevNode.type === 'imageInputNode') prevOutput = { image: prevNode.data?.image || null };
+          }
+          if (prevOutput) Object.assign(inputs, prevOutput);
+        }
+      }
+    }
 
     onNodeStart?.(nodeId);
 
@@ -180,6 +196,7 @@ export async function runPipeline({
 
 /**
  * Run only a single node (and its direct upstream dependencies).
+ * On mobile (no edges), falls back to collecting inputs from nodes above in list order.
  */
 export async function runSingleNode({
   nodeId,
@@ -194,7 +211,25 @@ export async function runSingleNode({
   const node = nodes.find((n) => n.id === nodeId);
   if (!node) return;
 
-  const inputs = buildInputMap([nodeId], edges, nodeOutputs, nodes)[nodeId] || {};
+  let inputs = buildInputMap([nodeId], edges, nodeOutputs, nodes)[nodeId] || {};
+
+  // ── Mobile fallback: if no inputs found via edges, gather from all nodes above ──
+  if (Object.keys(inputs).length === 0 && nodes.length > 1) {
+    const nodeIndex = nodes.findIndex((n) => n.id === nodeId);
+    if (nodeIndex > 0) {
+      for (let i = 0; i < nodeIndex; i++) {
+        const prevNode = nodes[i];
+        let prevOutput = nodeOutputs[prevNode.id];
+        // Pull static data from unrun prompt/image nodes
+        if (!prevOutput) {
+          if (prevNode.type === 'promptNode') prevOutput = { prompt: prevNode.data?.text || '' };
+          if (prevNode.type === 'imageInputNode') prevOutput = { image: prevNode.data?.image || null };
+        }
+        if (prevOutput) Object.assign(inputs, prevOutput);
+      }
+    }
+  }
+
   const settings = nodeSettings[nodeId] || {};
 
   onNodeStart?.(nodeId);
